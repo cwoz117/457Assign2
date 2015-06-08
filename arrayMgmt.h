@@ -1,50 +1,70 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-*                               loadIntFile
-
+*                               loadIntFile                                  *
+*                                                                            *
+*              This module contains functions used for loading data          *
+*              from files into structures to provide similar String          *
+*              functionality that the <string.h> module provides.            *
+*                                                                            *
+*              NOTE: Module is incomplete, functions and structs are         *
+*                    included as-needed for assignments.                     *
 *                                                                            *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+#include <stdio.h>
+#include <stdlib.h>
 
 struct intArray {
-      int *dataArray[];
       int size;
+      int *dataArray;
 };
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-*                               loadIntFile
-
+*                               loadIntFile                                  *
+*                                                                            *
+*              The loadIntFile function loads a file from memory and         *
+*              turns them into an array of integers, stored in the           *
+*              struct to also provide a size modifier.                       *
 *                                                                            *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-struct intArray loadIntFile(char *file){
-      FILE fd;
-      int *dat[] = (int *)malloc(10*sizeOf(int));
+struct intArray loadIntFile(char file[]){
+      struct intArray a;
+      a.size = 1000;
+      a.dataArray = (int *)malloc(a.size*sizeof(int));
       int i = 0;
-
+      char buf[16];
       // open and confirm we have the file
-      FILE fd = fopen(file, "r");
-      if (input == NULL){
+      FILE *fd = fopen(file, "r");
+      if (fd == NULL){
             printf("The file %s could not be opened.\n", file);
-            return NULL;
+            return;
       }
-
       // read from the file, expanding memory as required.
-      while (fscanf(fd, "%d", dat[i]) != EOF){
-            i++;
-            if ( i > strlen(dat)){
-
+      while (fscanf(fd, "%s", buf) != EOF){
+            a.dataArray[i] = atoi(buf);
+            if ( i > a.size){
+                  
                   // double the size of the array if the ary is full.
-                  dat = realloc(dat, strlen(dat)*2);
+                  struct intArray tmp; 
+		  tmp.size = a.size * 2;
+		  tmp.dataArray = (int *)realloc(a.dataArray, tmp.size *sizeof(int));
+		  
+                  // if the array could not be doubled, exit.
+		  if(tmp.dataArray == NULL){
+			printf("realloc could not expand the size of the array\n");
+		        exit(0);
+		  } else {
+			free(a.dataArray);
+			a.dataArray = tmp.dataArray;
+			a.size = tmp.size;
+		  }
             }
+            i++;
       }
       // strip away any extra memory.
-      dat = realloc(dat, i);
+      a.size = i;
+      a.dataArray = (int *)realloc(a.dataArray, i*sizeof(int));
       close(fd);
-
-      struct intArray a;
-      a->dataArray = dat;
-      a->size = i;
       return a;
 }
-
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *END OF FILE END OF FILE END OF FILE END OF FILE END OF FILE END OF FILE END *
