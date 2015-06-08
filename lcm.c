@@ -17,10 +17,48 @@
 #include <stdlib.h>
 #include <pthread.h>
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                               loadIntFile
 
+*                                                                            *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+int[] *loadIntFile(char *file){
+      FILE fd;
+      int *dat[] = (int *)malloc(10*sizeOf(int));
+      int i = 0;
+
+      // open and confirm we have the file
+      FILE fd = fopen(file, "r");
+      if (input == NULL){
+            printf("The file name requested could not be opened.\n");
+            return NULL;
+      }
+
+      // read from the file, expanding memory as required.
+      while (fscanf(fd, "%d", dat[i]) != EOF){
+            i++;
+            if ( i > strlen(dat)){
+
+                  // double the size of the array if the ary is full.
+                  dat = realloc(dat, strlen(dat)*2);
+            }
+      }
+      // strip away any extra memory.
+      dat = realloc(dat, i);
+
+      // return
+      close(fd);
+      return dat;
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                               Main
+
+*                                                                            *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 int main (int argc, char *argv[]){
-      FILE *input;
-      char buffer[32];
+      int *data[];
+      int i, n;
 
       // Confirm the program was executed with # of params.
       if (argc != 2) {
@@ -28,22 +66,17 @@ int main (int argc, char *argv[]){
             return 0;
       }
 
-      // Open the file, and confirm it is loaded.
-      input = fopen(arg[1], "r");
-      if (input == NULL){
-            printf("The file name requested could not be opened.\n");
+      // load the input data into memory
+      data = loadIntFile(argv[1]);
+      if (data == NULL){
+            printf("Function loadIntFile did not return an integer array.\n");
             return 0;
       }
 
-      // Read the data in from the file.
-	while (fscanf(input, "%s", buffer) != EOF ){
-
-	}
-      fclose(input);
-
-      // Divide up data into argv[2] groups (mod)
-      for (i = 0; i < atoi(argv[3]); i++){
-
+      // Divide up data into n groups, and start the thread.
+      n = atoi(argv[2]);
+      for (i = 0; i < n; i++){
+            // div n + 1
       }
 
       // Give the separate lists to the thread, and have it process.
