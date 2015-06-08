@@ -17,12 +17,52 @@
 #include <stdlib.h>
 #include <pthread.h>
 
+struct intArray {
+      int *dataArray[];
+      int size;
+};
+struct threadPackage {
+      int datBase;
+      int datOffset;
+      unsigned int subLCD;
+      struct intArray critRegion;
+};
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                               lcdFun
+
+*                                                                            *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+void lcdFun(void *arg){
+      struct threadPackage t = (struct threadPackage)arg;
+      int j;
+      int k = 0;
+      unsigned int subArray[t->datOffset];
+
+      // load your threads dividend of the work.
+      for (j = t->datBase; j < (t->datBase + t->datOffset); j++){
+            if (j < arg->critRegion->size){
+                  subArray[k] = arg->critRegion->dataArray[j];
+                  k++;
+            }
+      }
+
+      // Find the LCD
+
+}
+int gcdr(int m, int *n[]){
+      int tmp;
+
+}
+
+
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *                               loadIntFile
 
 *                                                                            *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-int[] *loadIntFile(char *file){
+struct intArray loadIntFile(char *file){
       FILE fd;
       int *dat[] = (int *)malloc(10*sizeOf(int));
       int i = 0;
@@ -45,10 +85,12 @@ int[] *loadIntFile(char *file){
       }
       // strip away any extra memory.
       dat = realloc(dat, i);
-
-      // return
       close(fd);
-      return dat;
+
+      struct intArray a;
+      a->dataArray = dat;
+      a->size = i;
+      return a;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -57,14 +99,15 @@ int[] *loadIntFile(char *file){
 *                                                                            *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 int main (int argc, char *argv[]){
-      int *data[];
-      int i, n;
+      struct intArray data;
+      int i, n, range;
 
       // Confirm the program was executed with # of params.
       if (argc != 2) {
             printf("Enter a filename, and the number of threads.\n");
             return 0;
       }
+
 
       // load the input data into memory
       data = loadIntFile(argv[1]);
@@ -75,8 +118,18 @@ int main (int argc, char *argv[]){
 
       // Divide up data into n groups, and start the thread.
       n = atoi(argv[2]);
-      for (i = 0; i < n; i++){
-            // div n + 1
+      struct threadPackage tp = malloc (n*sizeOf(threadPackage));
+      int range = strlen(tp);
+      i = 0;
+      range = (data->size / n) + 1;
+      while (i < n){
+            struct a *t = tp[i];
+            t->datBase = i*range;
+            t->datOffset = range;
+            t->critRegion = data;
+            ptthread_t thread;
+            pthread_create(&thread, NULL, lcdFun, (void *)t);
+            i++;
       }
 
       // Give the separate lists to the thread, and have it process.
