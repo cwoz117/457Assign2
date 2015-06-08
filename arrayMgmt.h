@@ -1,5 +1,8 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-*                               loadIntFile                                  *
+*                              File: arrayMgmt.h                             *
+*                            Course: CPSC457                                 *
+*                            Author: Chris Wozniak                           *
+*                               SID: 10109820                                *
 *                                                                            *
 *              This module contains functions used for loading data          *
 *              from files into structures to provide similar String          *
@@ -14,7 +17,7 @@
 
 struct intArray {
       int size;
-      int *dataArray;
+      unsigned int *dataArray;
 };
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -45,7 +48,7 @@ struct intArray loadIntFile(char file[]){
                   // double the size of the array if the ary is full.
                   struct intArray tmp; 
 		  tmp.size = a.size * 2;
-		  tmp.dataArray = (int *)realloc(a.dataArray, tmp.size *sizeof(int));
+		  tmp.dataArray = realloc(a.dataArray, tmp.size *sizeof(int));
 		  
                   // if the array could not be doubled, exit.
 		  if(tmp.dataArray == NULL){
@@ -61,9 +64,26 @@ struct intArray loadIntFile(char file[]){
       }
       // strip away any extra memory.
       a.size = i;
-      a.dataArray = (int *)realloc(a.dataArray, i*sizeof(int));
+      a.dataArray = realloc(a.dataArray, i*sizeof(int));
       close(fd);
       return a;
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                               loadIntFile                                  *
+*                                                                            *
+*              The loadIntFile function loads a file from memory and         *
+*              turns them into an array of integers, stored in the           *
+*              struct to also provide a size modifier.                       *
+*                                                                            *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+void printIntArray(struct intArray ia, int base, int offset){
+	int i;
+	printf("{");
+	for (i=base; i < offset-1; i++){
+		printf("%d, ", ia.dataArray[i]);
+	}
+	printf("%d}",ia.dataArray[offset-1]);
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

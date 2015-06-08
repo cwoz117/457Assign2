@@ -16,18 +16,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include "arrayMgmt.h"
+#include <math.h>
 #include "lcmTable.h"
 
 struct threadPackage {
       int datBase;
       int datOffset;
       unsigned int subLCD;
-      pthread tid;
-      struct intArray critRegion;
+      pthread_t tid;
+      struct intArray critReg;
 };
 
-void lcdFun(void *arg);
+void lcdFunct(void *arg);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *                               Main
@@ -37,10 +37,11 @@ void lcdFun(void *arg);
 int main (int argc, char *argv[]){
       struct intArray data;
       int i, n, range;
+      double dividend;
       unsigned int output;
 
       // Confirm the program was executed with # of params.
-      if (argc != 2) {
+      if (argc != 3) {
             printf("Enter a filename, and the number of threads.\n");
             return 0;
       }
@@ -48,68 +49,76 @@ int main (int argc, char *argv[]){
 
       // load the input data into memory
       data = loadIntFile(argv[1]);
-      if (data == NULL){
+      if (data.dataArray == NULL){
             printf("Function loadIntFile did not return an integer array.\n");
             return 0;
       }
-
       // Divide up data into n groups, and start the thread.
       n = atoi(argv[2]);
-      struct threadPackage tp = malloc (n*sizeOf(threadPackage));
-      int range = strlen(tp);
-      i = 0;
-      range = (data->size / n) + 1;
-      while (i < n){
-            struct a *t = tp[i];
-            t->datBase = i*range;
-            t->datOffset = range;
-            t->critRegion = data;
-            pthread thread;
-            t->tid = pthread_create(&thread, NULL, lcdFun, (void *)t);
-            i++;
+      struct threadPackage *tp = malloc (n*sizeof(struct threadPackage));
+      dividend = (data.size / n);
+      range = ceil(dividend);
+      for (i=0; i < n; i++){
+	    pthread_t thread;
+            tp[i].datBase = i*range;
+            tp[i].datOffset = range;
+            tp[i].critReg = data;
+            tp[i].tid = thread;
+            int j = pthread_create(&tp[i].tid, NULL, &lcdFunct, (void *)&tp[i]);
       }
-
       // Wait for threads to end computation
       for (i = 0; i < n; i++){
-            pthread_join(tp[i]->tid, NULL);
+            pthread_join(tp[i].tid, NULL);
       }
-
       // Return values into the final struct to compute
       unsigned int last[n];
       for (i = 0; i < n; i++){
-            last[i] = tp[i]->subLCD;
-      }
+            last[i] = tp[i].subLCD;     
+	}
       struct intArray a;
-      a->dataArray = (int)last;
-      a->size = n;
+      a.dataArray = last;
+      a.size = n;
       output = lcm(a);
 
       // output
+      for (i = 0; i < n; i++){
+            printf("thread %u: ",tp[i].tid);
+	    printIntArray(tp[i].critReg, tp[i].datBase, tp[i].datOffset);
+	    printf("\t: LCM = %u\n", tp[i].subLCD);
+      }
+      printf("Final Thread: %u: ",tp[i].tid);
+      printIntArray(a, tp[i].datBase, tp[i].datOffset);
+      printf("\t: LCM = %u\n", output);
+      printf("Final LCM: %u\n", output);
+
 
       return 1;
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-*                               lcdFun
+*                               lcdFunct
 
 *                                                                            *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-void lcdFun(void *arg){
-      struct threadPackage t = (struct threadPackage)arg;
+void lcdFunct(void *arg){
+      struct threadPackage *t = arg;
       int j;
       int k = 0;
       unsigned int subArray[t->datOffset];
 
       // load your threads dividend of the work.
       for (j = t->datBase; j < (t->datBase + t->datOffset); j++){
-            if (j < arg->critRegion->size){
-                  subArray[k] = arg->critRegion->dataArray[j];
+            if (j < t->critReg.size){
+                  subArray[k] = t->critReg.dataArray[j];
                   k++;
             }
       }
+      struct intArray tmp;
+      tmp.dataArray = subArray;
+      tmp.size = k;
 
       // Find the LCD
-      arg->subLCD = lcm(t->intArray);
+      t->subLCD = lcm(tmp);
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
