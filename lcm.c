@@ -16,82 +16,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include "arrayMgmt.h"
+#include "lcmTable.h"
 
-struct intArray {
-      int *dataArray[];
-      int size;
-};
 struct threadPackage {
       int datBase;
       int datOffset;
       unsigned int subLCD;
+      pthread tid;
       struct intArray critRegion;
 };
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-*                               lcdFun
-
-*                                                                            *
-* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-void lcdFun(void *arg){
-      struct threadPackage t = (struct threadPackage)arg;
-      int j;
-      int k = 0;
-      unsigned int subArray[t->datOffset];
-
-      // load your threads dividend of the work.
-      for (j = t->datBase; j < (t->datBase + t->datOffset); j++){
-            if (j < arg->critRegion->size){
-                  subArray[k] = arg->critRegion->dataArray[j];
-                  k++;
-            }
-      }
-
-      // Find the LCD
-
-}
-int gcdr(int m, int *n[]){
-      int tmp;
-
-}
-
-
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-*                               loadIntFile
-
-*                                                                            *
-* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-struct intArray loadIntFile(char *file){
-      FILE fd;
-      int *dat[] = (int *)malloc(10*sizeOf(int));
-      int i = 0;
-
-      // open and confirm we have the file
-      FILE fd = fopen(file, "r");
-      if (input == NULL){
-            printf("The file name requested could not be opened.\n");
-            return NULL;
-      }
-
-      // read from the file, expanding memory as required.
-      while (fscanf(fd, "%d", dat[i]) != EOF){
-            i++;
-            if ( i > strlen(dat)){
-
-                  // double the size of the array if the ary is full.
-                  dat = realloc(dat, strlen(dat)*2);
-            }
-      }
-      // strip away any extra memory.
-      dat = realloc(dat, i);
-      close(fd);
-
-      struct intArray a;
-      a->dataArray = dat;
-      a->size = i;
-      return a;
-}
+void lcdFun(void *arg);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *                               Main
@@ -101,6 +37,7 @@ struct intArray loadIntFile(char *file){
 int main (int argc, char *argv[]){
       struct intArray data;
       int i, n, range;
+      unsigned int output;
 
       // Confirm the program was executed with # of params.
       if (argc != 2) {
@@ -127,32 +64,53 @@ int main (int argc, char *argv[]){
             t->datBase = i*range;
             t->datOffset = range;
             t->critRegion = data;
-            ptthread_t thread;
-            pthread_create(&thread, NULL, lcdFun, (void *)t);
+            pthread thread;
+            t->tid = pthread_create(&thread, NULL, lcdFun, (void *)t);
             i++;
       }
 
-      // Give the separate lists to the thread, and have it process.
-
+      // Wait for threads to end computation
+      for (i = 0; i < n; i++){
+            pthread_join(tp[i]->tid, NULL);
+      }
 
       // Return values into the final struct to compute
-
+      unsigned int last[n];
+      for (i = 0; i < n; i++){
+            last[i] = tp[i]->subLCD;
+      }
+      struct intArray a;
+      a->dataArray = (int)last;
+      a->size = n;
+      output = lcm(a);
 
       // output
-
-
 
       return 1;
 }
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                               lcdFun
 
+*                                                                            *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+void lcdFun(void *arg){
+      struct threadPackage t = (struct threadPackage)arg;
+      int j;
+      int k = 0;
+      unsigned int subArray[t->datOffset];
 
+      // load your threads dividend of the work.
+      for (j = t->datBase; j < (t->datBase + t->datOffset); j++){
+            if (j < arg->critRegion->size){
+                  subArray[k] = arg->critRegion->dataArray[j];
+                  k++;
+            }
+      }
 
-
-
-
-
-
+      // Find the LCD
+      arg->subLCD = lcm(t->intArray);
+}
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *END OF FILE END OF FILE END OF FILE END OF FILE END OF FILE END OF FILE END *
