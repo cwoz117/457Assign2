@@ -54,6 +54,7 @@ unsigned int lcm(struct intArray ia){
 
                   val = val * (unsigned int)currentPrime;
                   currentPrimeRemains = 0;
+		  allValuesReduced = 0;
             } else {
                   // If we're not done
                   if (!allValuesReduced){

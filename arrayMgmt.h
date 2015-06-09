@@ -58,7 +58,7 @@ struct intArray loadIntFile(char file[]){
 			free(a.dataArray);
 			a.dataArray = tmp.dataArray;
 			a.size = tmp.size;
-		  }
+		      }
             }
             i++;
       }
@@ -72,18 +72,24 @@ struct intArray loadIntFile(char file[]){
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 *                               loadIntFile                                  *
 *                                                                            *
-*              The loadIntFile function loads a file from memory and         *
-*              turns them into an array of integers, stored in the           *
-*              struct to also provide a size modifier.                       *
+*     The loadIntFile function loads a file from memory and                  *
+*     turns them into an array of integers, stored in the                    *
+*     struct to also provide a size modifier.                                *
 *                                                                            *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-void printIntArray(struct intArray ia, int base, int offset){
-	int i;
-	printf("{");
-	for (i=base; i < offset-1; i++){
-		printf("%d, ", ia.dataArray[i]);
-	}
-	printf("%d}",ia.dataArray[offset-1]);
+void printIntArray(struct intArray ia, int base, int offset, int arraySize){
+      int i;
+      printf("{");
+      for (i=base; i < (base + offset); i++){
+            if (i < arraySize){
+                  if (i > base) {		
+                        printf(", %d", ia.dataArray[i]);
+                  } else {
+                        printf("%d", ia.dataArray[i]);
+                  }		
+            }
+      }
+      printf("}");
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

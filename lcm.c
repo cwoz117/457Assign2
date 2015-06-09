@@ -6,12 +6,16 @@
 *                                                                            *
 *          This program is a multi-threaded system that determines the       *
 *      lowest common multiple when provided with a file of integers.         *
-*       It also allows the user to expand how many threads the               *
-*       application is capable of running. If left blank the function        *
+*      It also allows the user to expand how many threads the                *
+*      application is capable of running. If left blank the function         *
 *      will default to 3.                                                    *
 *                                                                            *
-*      EXAMPLE: ./lcm <file-of-int> <number-of-threads>                      *
+*      EXAMPLE: ./lcm <file-of-ints> <number-of-threads>                     *
 *                                                                            *
+*      NOTE: Compilation requires both the -pthread and -lm flags for        *
+*            linux based machines, as these packages are statically          *
+*            undefined by gcc.                                               *
+*                                                                            * 
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +23,7 @@
 #include <math.h>
 #include "lcmTable.h"
 
+// Info package for each thread.
 struct threadPackage {
       int datBase;
       int datOffset;
@@ -30,8 +35,16 @@ struct threadPackage {
 void lcdFunct(void *arg);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-*                               Main
-
+*                                  Main                                      *
+*                                                                            *
+*     The main program provided by lcm is our thread generator. We           *
+*     take the values provided in the file, and split it into n              *
+*     threads to solve. We have some basic error checking to                 *
+*     confirm things such as file output.                                    *
+*                                                                            *
+*     The data management style used was similar to a barrier, where         *
+*     each thread was passed a threadPackage struct which defined            *
+*     the constraints of what/where the thread was allowed to access.        *
 *                                                                            *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 int main (int argc, char *argv[]){
@@ -56,7 +69,7 @@ int main (int argc, char *argv[]){
       // Divide up data into n groups, and start the thread.
       n = atoi(argv[2]);
       struct threadPackage *tp = malloc (n*sizeof(struct threadPackage));
-      dividend = (data.size / n);
+      dividend = ((float)data.size / n);
       range = ceil(dividend);
       for (i=0; i < n; i++){
 	    pthread_t thread;
@@ -74,21 +87,29 @@ int main (int argc, char *argv[]){
       unsigned int last[n];
       for (i = 0; i < n; i++){
             last[i] = tp[i].subLCD;     
-	}
+      }
+      // wrap the returned values in an intArray struct
       struct intArray a;
       a.dataArray = last;
       a.size = n;
+
+      // Find the final LCM
       output = lcm(a);
 
-      // output
+      // Reset output since pass by reference
       for (i = 0; i < n; i++){
-            printf("thread %u: ",tp[i].tid);
-	    printIntArray(tp[i].critReg, tp[i].datBase, tp[i].datOffset);
-	    printf("\t: LCM = %u\n", tp[i].subLCD);
+            last[i] = tp[i].subLCD;     
       }
-      printf("Final Thread: %u: ",tp[i].tid);
-      printIntArray(a, tp[i].datBase, tp[i].datOffset);
-      printf("\t: LCM = %u\n", output);
+	
+      // Formatted output
+      for (i = 0; i < n; i++){
+            printf("thread %u: \t",tp[i].tid);
+	    printIntArray(tp[i].critReg, tp[i].datBase, tp[i].datOffset, data.size);
+	    printf(", LCM = %u\n", tp[i].subLCD);
+      }
+      printf("Last Pass: %u: \t",tp[i].tid);
+      printIntArray(a, 0, a.size, a.size);
+      printf(", LCM = %u\n", output);
       printf("Final LCM: %u\n", output);
 
 
@@ -96,8 +117,12 @@ int main (int argc, char *argv[]){
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-*                               lcdFunct
-
+*                               lcdFunct                                     *
+*                                                                            *
+*     lcdFunct is the primary function that defines what a specific          *
+*     thread is doing. After organizing data from the                        *
+*     critical-region defined in its threadPackage, the function             *
+*     finds the LCD of its assigned valules.                                 *
 *                                                                            *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void lcdFunct(void *arg){
@@ -105,14 +130,14 @@ void lcdFunct(void *arg){
       int j;
       int k = 0;
       unsigned int subArray[t->datOffset];
-
-      // load your threads dividend of the work.
+      // Load your threads dividend of the work.
       for (j = t->datBase; j < (t->datBase + t->datOffset); j++){
             if (j < t->critReg.size){
                   subArray[k] = t->critReg.dataArray[j];
                   k++;
             }
       }
+      // Struct wrapper so we could use lcm
       struct intArray tmp;
       tmp.dataArray = subArray;
       tmp.size = k;
